@@ -14,7 +14,7 @@ data = {
             "name": "Suva Sanket Rout",
             "dept": "ist",
             "starting_year": 2021,
-            "total_attendance": 7,
+            "total_attendance": 10,
             "sec": "B",
             "year": 3,
             "last_attendance_time": "2024-02-11 00:54:34"
@@ -24,12 +24,14 @@ data = {
             "name": "Elon Musk",
             "dept": "ist",
             "starting_year": 2021,
-            "total_attendance": 12,
+            "total_attendance": 1,
             "sec": "B",
             "year": 3,
             "last_attendance_time": "2024-01-11 00:54:34"
         },
 }
 
+print("Uploading to Database...")
 for key, value in data.items():
     ref.child(key).set(value)
+print("Upload Complete")
