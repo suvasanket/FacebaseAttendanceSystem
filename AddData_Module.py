@@ -14,7 +14,7 @@ data = {
             "name": "Suva Sanket Rout",
             "dept": "ist",
             "starting_year": 2021,
-            "total_attendance": 10,
+            "total_attendance": 5,
             "sec": "B",
             "year": 3,
             "last_attendance_time": "2024-02-11 00:54:34"

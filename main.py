@@ -11,10 +11,13 @@ import numpy as np
 from datetime import datetime
 
 cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred,{
-    'databaseURL':"https://studentsattendance-7cd66-default-rtdb.firebaseio.com/",
-    'storageBucket':"studentsattendance-7cd66.appspot.com"
-})
+firebase_admin.initialize_app(
+    cred,
+    {
+        "databaseURL": "https://studentsattendance-7cd66-default-rtdb.firebaseio.com/",
+        "storageBucket": "studentsattendance-7cd66.appspot.com",
+    },
+)
 
 bucket = storage.bucket()
 
@@ -22,22 +25,22 @@ cap = cv2.VideoCapture(0)
 cap.set(3, 640)
 cap.set(4, 480)
 
-imgBackground = cv2.imread('Resources/background.png')
+imgBackground = cv2.imread("Resources/background.png")
 
 # Importing the mode images into a list
-folderModePath = 'Resources/Modes'
+folderModePath = "Resources/Modes"
 modePathList = os.listdir(folderModePath)
 imgModeList = []
 for path in modePathList:
     imgModeList.append(cv2.imread(os.path.join(folderModePath, path)))
 
 # Load the encoding file
-print("Loading Encode File ...")
-file = open('EncodeFile.p', 'rb')
+print("FaceModule loading...")
+file = open("EncodeFile.p", "rb")
 encodeListKnownWithIds = pickle.load(file)
 file.close()
 encodeListKnown, studentIds = encodeListKnownWithIds
-print("Encode File Loaded")
+print("FaceModule Loaded")
 
 modeType = 0
 counter = 0
@@ -79,55 +82,110 @@ while True:
         if counter != 0:
             if counter == 1:
                 # Get the Data
-                studentInfo = db.reference(f'Students/{id}').get()
+                studentInfo = db.reference(f"Students/{id}").get()
                 # Get the Image from the storage
-                blob = bucket.get_blob(f'Images/{id}.png')
+                blob = bucket.get_blob(f"Images/{id}.png")
                 array = np.frombuffer(blob.download_as_string(), np.uint8)
                 imgStudent = cv2.imdecode(array, cv2.COLOR_BGRA2BGR)
                 # Update data of attendance
-                datetimeObject = datetime.strptime(studentInfo['last_attendance_time'],
-                                                   "%Y-%m-%d %H:%M:%S")
+                datetimeObject = datetime.strptime(
+                    studentInfo["last_attendance_time"], "%Y-%m-%d %H:%M:%S"
+                )
                 secondsElapsed = (datetime.now() - datetimeObject).total_seconds()
-                # CoolDown Time (in seconds) the number before the the attendance can't update
+                # CoolDown Time (in seconds) the number before the attendance can't update
                 # Here it is 24hr (86400)
                 if secondsElapsed > 30:
-                    ref = db.reference(f'Students/{id}')
-                    studentInfo['total_attendance'] += 1
-                    ref.child('total_attendance').set(studentInfo['total_attendance'])
-                    ref.child('last_attendance_time').set(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    ref = db.reference(f"Students/{id}")
+                    studentInfo["total_attendance"] += 1
+                    ref.child("total_attendance").set(studentInfo["total_attendance"])
+                    ref.child("last_attendance_time").set(
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    )
                 else:
                     modeType = 3
                     counter = 0
-                    imgBackground[44:44 + 633, 808:808 + 414] = imgModeList[modeType]
+                    imgBackground[44 : 44 + 633, 808 : 808 + 414] = imgModeList[
+                        modeType
+                    ]
 
             if modeType != 3:
-
                 if 45 < counter < 60:
                     modeType = 2
 
-                imgBackground[44:44 + 633, 808:808 + 414] = imgModeList[modeType]
+                imgBackground[44 : 44 + 633, 808 : 808 + 414] = imgModeList[modeType]
 
                 if counter <= 45:
                     # noinspection PyUnboundLocalVariable
-                    cv2.putText(imgBackground, str(studentInfo['total_attendance']), (861, 125),
-                                cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 1)
-                    cv2.putText(imgBackground, str(studentInfo['dept']), (1006, 550),
-                                cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1)
-                    cv2.putText(imgBackground, str(id), (1006, 493),
-                                cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1)
-                    cv2.putText(imgBackground, str(studentInfo['sec']), (910, 625),
-                                cv2.FONT_HERSHEY_DUPLEX, 0.6, (100, 100, 100), 1)
-                    cv2.putText(imgBackground, str(studentInfo['year']), (1025, 625),
-                                cv2.FONT_HERSHEY_DUPLEX, 0.6, (100, 100, 100), 1)
-                    cv2.putText(imgBackground, str(studentInfo['starting_year']), (1125, 625),
-                                cv2.FONT_HERSHEY_DUPLEX, 0.6, (100, 100, 100), 1)
+                    cv2.putText(
+                        imgBackground,
+                        str(studentInfo["total_attendance"]),
+                        (861, 125),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        1,
+                        (255, 255, 255),
+                        1,
+                    )
+                    cv2.putText(
+                        imgBackground,
+                        str(studentInfo["dept"]),
+                        (1006, 550),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        0.5,
+                        (255, 255, 255),
+                        1,
+                    )
+                    cv2.putText(
+                        imgBackground,
+                        str(id),
+                        (1006, 493),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        0.5,
+                        (255, 255, 255),
+                        1,
+                    )
+                    cv2.putText(
+                        imgBackground,
+                        str(studentInfo["sec"]),
+                        (910, 625),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        0.6,
+                        (100, 100, 100),
+                        1,
+                    )
+                    cv2.putText(
+                        imgBackground,
+                        str(studentInfo["year"]),
+                        (1025, 625),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        0.6,
+                        (100, 100, 100),
+                        1,
+                    )
+                    cv2.putText(
+                        imgBackground,
+                        str(studentInfo["starting_year"]),
+                        (1125, 625),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        0.6,
+                        (100, 100, 100),
+                        1,
+                    )
 
-                    (w, h), _ = cv2.getTextSize(studentInfo['name'], cv2.FONT_HERSHEY_DUPLEX, 1, 1)
+                    (w, h), _ = cv2.getTextSize(
+                        studentInfo["name"], cv2.FONT_HERSHEY_DUPLEX, 1, 1
+                    )
                     offset = (414 - w) // 2
-                    cv2.putText(imgBackground, str(studentInfo['name']), (808 + offset, 445),
-                                cv2.FONT_HERSHEY_DUPLEX, 1, (50, 50, 50), 1)
+                    cv2.putText(
+                        imgBackground,
+                        str(studentInfo["name"]),
+                        (808 + offset, 445),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        1,
+                        (50, 50, 50),
+                        1,
+                    )
 
-                    imgBackground[175:175 + 216, 909:909 + 216] = imgStudent
+                    imgBackground[175 : 175 + 216, 909 : 909 + 216] = imgStudent
 
                 counter += 1
 
@@ -136,7 +194,9 @@ while True:
                     modeType = 0
                     studentInfo = []
                     imgStudent = []
-                    imgBackground[44:44 + 633, 808:808 + 414] = imgModeList[modeType]
+                    imgBackground[44 : 44 + 633, 808 : 808 + 414] = imgModeList[
+                        modeType
+                    ]
     else:
         modeType = 0
         counter = 0
