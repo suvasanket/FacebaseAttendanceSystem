@@ -9,7 +9,9 @@ from firebase_admin import db
 from firebase_admin import storage
 import numpy as np
 from datetime import datetime
+from test import test
 
+#### Database Authenticator ####
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(
     cred,
@@ -18,16 +20,15 @@ firebase_admin.initialize_app(
         "storageBucket": "studentsattendance-7cd66.appspot.com",
     },
 )
-
 bucket = storage.bucket()
 
+#### Video Capture ####
 cap = cv2.VideoCapture(0)
 cap.set(3, 640)
 cap.set(4, 480)
 
 imgBackground = cv2.imread("Resources/background.png")
 
-# Importing the mode images into a list
 folderModePath = "Resources/Modes"
 modePathList = os.listdir(folderModePath)
 imgModeList = []
@@ -47,11 +48,18 @@ counter = 0
 id = -1
 imgStudent = []
 
+#### Main loop ####
 while True:
     success, img = cap.read()
 
-    imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
-    imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
+    recent_capture = cv2.resize(img, (0, 0), None, 0.25, 0.25)
+    imgS = cv2.cvtColor(recent_capture, cv2.COLOR_BGR2RGB)
+
+    live = test(
+        image=recent_capture,
+        model_dir='Silent-Face-Anti-Spoofing/resources/anti_spoof_models',
+        device_id=0
+    )
 
     faceCurFrame = face_recognition.face_locations(imgS)
     encodeCurFrame = face_recognition.face_encodings(imgS, faceCurFrame)
@@ -65,19 +73,19 @@ while True:
             faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
 
             matchIndex = np.argmin(faceDis)
-
-            if matches[matchIndex]:
-                y1, x2, y2, x1 = faceLoc
-                y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
-                bbox = 55 + x1, 162 + y1, x2 - x1, y2 - y1
-                imgBackground = cvzone.cornerRect(imgBackground, bbox, rt=0)
-                id = studentIds[matchIndex]
-                if counter == 0:
-                    cvzone.putTextRect(imgBackground, "Loading", (275, 400))
-                    cv2.imshow("Face Attendance", imgBackground)
-                    cv2.waitKey(1)
-                    counter = 1
-                    modeType = 1
+            if live == 1:
+                if matches[matchIndex]:
+                    y1, x2, y2, x1 = faceLoc
+                    y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
+                    bbox = 55 + x1, 162 + y1, x2 - x1, y2 - y1
+                    imgBackground = cvzone.cornerRect(imgBackground, bbox, rt=0)
+                    id = studentIds[matchIndex]
+                    if counter == 0:
+                        cvzone.putTextRect(imgBackground, "Loading", (275, 400))
+                        cv2.imshow("Face Attendance", imgBackground)
+                        cv2.waitKey(1)
+                        counter = 1
+                        modeType = 1
 
         if counter != 0:
             if counter == 1:
@@ -104,17 +112,16 @@ while True:
                 else:
                     modeType = 3
                     counter = 0
-                    imgBackground[44 : 44 + 633, 808 : 808 + 414] = imgModeList[
+                    imgBackground[44: 44 + 633, 808: 808 + 414] = imgModeList[
                         modeType
                     ]
 
             if modeType != 3:
-                if 45 < counter < 60:
+                if 10 < counter < 20:
                     modeType = 2
+                imgBackground[44: 44 + 633, 808: 808 + 414] = imgModeList[modeType]
 
-                imgBackground[44 : 44 + 633, 808 : 808 + 414] = imgModeList[modeType]
-
-                if counter <= 45:
+                if counter <= 10:
                     # noinspection PyUnboundLocalVariable
                     cv2.putText(
                         imgBackground,
@@ -185,16 +192,16 @@ while True:
                         1,
                     )
 
-                    imgBackground[175 : 175 + 216, 909 : 909 + 216] = imgStudent
+                    imgBackground[175: 175 + 216, 909: 909 + 216] = imgStudent
 
                 counter += 1
 
-                if counter >= 60:
+                if counter >= 20:
                     counter = 0
                     modeType = 0
                     studentInfo = []
                     imgStudent = []
-                    imgBackground[44 : 44 + 633, 808 : 808 + 414] = imgModeList[
+                    imgBackground[44: 44 + 633, 808: 808 + 414] = imgModeList[
                         modeType
                     ]
     else:
